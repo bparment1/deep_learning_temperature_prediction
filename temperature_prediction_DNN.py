@@ -157,72 +157,17 @@ data_gpd = gpd.read_file(os.path.join(in_dir,ghcn_filename))
 
 data_gpd.head()  
 
-## Extracting information from raster using raster io object
-lst1 = rasterio.open(os.path.join(in_dir,infile_lst_month1))
-lst7 = rasterio.open(os.path.join(in_dir,infile_lst_month7))
-type(lst1)
-lst1.crs # explore Coordinate Reference System 
-lst1.shape
-lst1.height
-plot.show(lst1)
-plot.show(lst7)
-
-## Read raster bands directly to Numpy arrays and visualize data
-r_lst1 = lst1.read(1,masked=True) #read first array with masked value, nan are assigned for NA
-r_lst7 = lst7.read(1,masked=True) #read first array with masked value, nan are assigned for NA
-
-spatial_extent = rasterio.plot.plotting_extent(lst1)
-type(r_lst1)
-r_lst1.size
-
-r_diff = r_lst7 - r_lst1
-plt.imshow(r_diff) # other way to display data
-plt.title("Difference in land surface temperature between January and July ", fontsize= 20)
-plt.colorbar()
-
-# Explore values distribution
-plt.hist(r_lst1.ravel(),
-         bins=256,
-         range=(259.0,287.0))
-## Add panel figures later
-         
-##### Combine raster layer and geogpanda layer
+         ##### Combine raster layer and geogpanda layer
 
 data_gpd.plot(marker="*",color="green",markersize=5)
 station_or = data_gpd.to_crs({'init': 'epsg:2991'}) #reproject to  match the  raster image
 
 ##### How to combine plots with rasterio package
 fig, ax = plt.subplots()
-rasterio.plot.show(lst1,ax=ax,
-                          clim=(259.0,287.0),)
 station_or.plot(ax=ax,marker="*",
               color="red",
                markersize=10)
                
-##### How to combine plots with matplotlib package
-fig, ax = plt.subplots(figsize = (16,6))
-lst_plot = ax.imshow(r_lst1, 
-                       cmap='Greys', 
-                       extent=spatial_extent)
-ax.set_title("Long term mean for January land surface temperature", fontsize= 20)
-fig.colorbar(lst_plot)
-
-#https://stackoverflow.com/questions/9662995/matplotlib-change-title-and-colorbar-text-and-tick-colors
-# turn off the x and y axes for prettier plotting
-#ax.set_axis_off(); #this removes coordinates on the plot
-
-###########################################
-### PART II : Extract information from raster and prepare covariates #######
-#raster = './data/slope.tif'
-
-lst1_gr = gr.from_file(os.path.join(in_dir,infile_lst_month1))
-lst7_gr = gr.from_file(os.path.join(in_dir,infile_lst_month7))
-
-type(lst1_gr) # check that we have a georaster object
-# Plot data
-lst1_gr.plot()
-lst1_gr.plot(clim=(259.0, 287.0))
-
 #### Extract information from raster using coordinates
 x_coord = station_or.geometry.x # pands.core.series.Series
 y_coord = station_or.geometry.y
@@ -362,7 +307,6 @@ sns.boxplot(x='test',y='T1',data=residuals_df)
 
 
 ############################# END OF SCRIPT ###################################
-
 
 
 
