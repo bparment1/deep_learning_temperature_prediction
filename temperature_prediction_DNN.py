@@ -2,16 +2,15 @@
 """
 Spyder Editor.
 """
-####################################  Temperature Predictions #######################################
+#################################### Regression Temperature #######################################
 ######################## Analyze and predict air temperature with Earth Observation data #######################################
 #This script performs analyses to predict air temperature using several coveriates.
 #The goal is to predict air temperature using Remotely Sensing data as well as compare measurements
 # from the ground station to the remotely sensed measurements.
-# We are using Deep Learning Neural Netwwork from Keras to predict temperature.
 #
 #AUTHORS: Benoit Parmentier
 #DATE CREATED: 04/18/2018
-#DATE MODIFIED: 05/01/2019
+#DATE MODIFIED: 04/18/2019
 #Version: 1
 #PROJECT: SESYNC Geospatial Course and AAG 2019 Python Geospatial Course
 #TO DO:
@@ -156,8 +155,37 @@ else:
 
 data_gpd = gpd.read_file(os.path.join(in_dir,ghcn_filename))
 
-data_gpd.head() 
+data_gpd.head()  
 
+## Extracting information from raster using raster io object
+lst1 = rasterio.open(os.path.join(in_dir,infile_lst_month1))
+lst7 = rasterio.open(os.path.join(in_dir,infile_lst_month7))
+type(lst1)
+lst1.crs # explore Coordinate Reference System 
+lst1.shape
+lst1.height
+plot.show(lst1)
+plot.show(lst7)
+
+## Read raster bands directly to Numpy arrays and visualize data
+r_lst1 = lst1.read(1,masked=True) #read first array with masked value, nan are assigned for NA
+r_lst7 = lst7.read(1,masked=True) #read first array with masked value, nan are assigned for NA
+
+spatial_extent = rasterio.plot.plotting_extent(lst1)
+type(r_lst1)
+r_lst1.size
+
+r_diff = r_lst7 - r_lst1
+plt.imshow(r_diff) # other way to display data
+plt.title("Difference in land surface temperature between January and July ", fontsize= 20)
+plt.colorbar()
+
+# Explore values distribution
+plt.hist(r_lst1.ravel(),
+         bins=256,
+         range=(259.0,287.0))
+## Add panel figures later
+         
 ##### Combine raster layer and geogpanda layer
 
 data_gpd.plot(marker="*",color="green",markersize=5)
@@ -165,10 +193,42 @@ station_or = data_gpd.to_crs({'init': 'epsg:2991'}) #reproject to  match the  ra
 
 ##### How to combine plots with rasterio package
 fig, ax = plt.subplots()
+rasterio.plot.show(lst1,ax=ax,
+                          clim=(259.0,287.0),)
 station_or.plot(ax=ax,marker="*",
               color="red",
                markersize=10)
                
+##### How to combine plots with matplotlib package
+fig, ax = plt.subplots(figsize = (16,6))
+lst_plot = ax.imshow(r_lst1, 
+                       cmap='Greys', 
+                       extent=spatial_extent)
+ax.set_title("Long term mean for January land surface temperature", fontsize= 20)
+fig.colorbar(lst_plot)
+
+#https://stackoverflow.com/questions/9662995/matplotlib-change-title-and-colorbar-text-and-tick-colors
+# turn off the x and y axes for prettier plotting
+#ax.set_axis_off(); #this removes coordinates on the plot
+
+###########################################
+### PART II : Extract information from raster and prepare covariates #######
+#raster = './data/slope.tif'
+
+lst1_gr = gr.from_file(os.path.join(in_dir,infile_lst_month1))
+lst7_gr = gr.from_file(os.path.join(in_dir,infile_lst_month7))
+
+type(lst1_gr) # check that we have a georaster object
+# Plot data
+lst1_gr.plot()
+lst1_gr.plot(clim=(259.0, 287.0))
+
+#### Extract information from raster using coordinates
+x_coord = station_or.geometry.x # pands.core.series.Series
+y_coord = station_or.geometry.y
+# Find value at point (x,y) or at vectors (X,Y)
+station_or['LST1'] = lst1_gr.map_pixel(x_coord,y_coord)
+station_or['LST7'] = lst7_gr.map_pixel(x_coord,y_coord)
 
 station_or.columns #get names of col
 
@@ -176,6 +236,8 @@ station_or['year'].value_counts()
 station_or.groupby(['month'])['value'].mean() # average by stations per month
      
 print("number of rows:",station_or.station.count(),", number of stations:",len(station_or.station.unique()))
+station_or['LST1'] = station_or['LST1'] - 273.15 #create new column
+station_or['LST7'] = station_or['LST7'] - 273.15 #create new column
 
 station_or_jan = station_or.loc[(station_or['month']==1) & (station_or['value']!=-9999)]
 station_or_jul = station_or.loc[(station_or['month']==7) & (station_or['value']!=-9999)]
@@ -185,8 +247,8 @@ station_or_jan.columns
 station_or_jan.shape
 
 #avg_df = station_or.groupby(['station'])['value'].mean())
-avg_jan_df = station_or_jan.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
-avg_jul_df = station_or_jul.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
+avg_jan_df = station_or_jan.groupby(['station'])['value','LST1','LST7'].mean()
+avg_jul_df = station_or_jul.groupby(['station'])['value','LST1','LST7'].mean()
 
 avg_jan_df.head()
 avg_jan_df.shape
@@ -196,10 +258,7 @@ avg_jul_df.head()
 
 avg_jan_df['T1'] = avg_jan_df['value']/10
 avg_jul_df['T7'] = avg_jul_df['value']/10
-
-avg_jan_df = avg_jan_df.rename(columns={"mm_01": "LST1", "mm_07": "LST7"})
-avg_jul_df = avg_jul_df.rename(columns={"mm_01": "LST1", "mm_07": "LST7"})
-
+         
 ################################################
 ###  PART III : Fit model and generate prediction
 
@@ -207,7 +266,7 @@ avg_jul_df = avg_jul_df.rename(columns={"mm_01": "LST1", "mm_07": "LST7"})
 ### Add additionl covariates!!
 
 #selected_covariates_names_updated = selected_continuous_var_names + names_cat 
-selected_features = ['LST1','ELEV_SRTM','CANHEIGHT','DISTOC'] #selected features
+selected_features = ['LST1'] #selected features
 selected_target = ['T1'] #selected dependent variables
 ## Split training and testing
 
@@ -303,6 +362,7 @@ sns.boxplot(x='test',y='T1',data=residuals_df)
 
 
 ############################# END OF SCRIPT ###################################
+
 
 
 
