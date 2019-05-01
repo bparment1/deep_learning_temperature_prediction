@@ -13,10 +13,12 @@ Spyder Editor.
 #DATE CREATED: 04/18/2018
 #DATE MODIFIED: 05/01/2019
 #Version: 1
-#PROJECT: SESYNC Geospatial Course and AAG 2019 Python Geospatial Course
+#PROJECT: 
 #TO DO:
 #
 #COMMIT: clean up code for workshop
+#https://towardsdatascience.com/how-to-train-your-neural-networks-in-parallel-with-keras-and-apache-spark-ea8a3f48cae6
+#https://hackernoon.com/build-your-first-neural-network-to-predict-house-prices-with-keras-3fb0839680f4
 #
 #################################################################################################
 
@@ -42,9 +44,15 @@ from pyproj import Proj
 from osgeo import osr
 from shapely.geometry import Point
 from collections import OrderedDict
-import webcolors
 import sklearn
 
+import keras
+from keras.models import Sequential
+from keras.layers import *
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 import keras
 from keras.models import Sequential
 from keras.layers import *
@@ -219,6 +227,34 @@ X_train, X_test, y_train, y_test = train_test_split(avg_jan_df[selected_features
                                                     random_state=random_seed)
    
 X_train.shape
+
+
+#### Scaling between 0-1 for continuous variables
+selected_continuous_var_names = selected_features
+# Data needs to be scaled to a small range like 0 to 1 for the neural
+# network to work well.
+scaler = MinMaxScaler(feature_range=(0, 1))
+### need to select only the continuous var:
+scaled_training = scaler.fit_transform(X_train[selected_continuous_var_names])
+scaled_testing = scaler.transform(X_test[selected_continuous_var_names])
+
+type(scaled_training) # array
+scaled_training.shape
+
+## Concatenate column-wise
+X_testing_df = pd.DataFrame(scaled_testing,columns=selected_continuous_var_names)
+
+X_training_df = pd.DataFrame(np.concatenate((X_train[names_cat].values,scaled_training),axis=1),
+                                            columns=names_cat+selected_continuous_var_names)
+
+X_testing_df.to_csv(os.path.join(out_dir,
+                    "X_testing_df_"+out_suffix+".csv"))
+
+X_training_df.to_csv(os.path.join(out_dir,
+                    "X_training_df_"+out_suffix+".csv"))
+
+
+
 
 from sklearn.linear_model import LinearRegression
 regr = LinearRegression() #create/instantiate object used for linear regresssion
