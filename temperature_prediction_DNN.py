@@ -2,15 +2,16 @@
 """
 Spyder Editor.
 """
-#################################### Regression Temperature #######################################
+####################################  Temperature Predictions #######################################
 ######################## Analyze and predict air temperature with Earth Observation data #######################################
 #This script performs analyses to predict air temperature using several coveriates.
 #The goal is to predict air temperature using Remotely Sensing data as well as compare measurements
 # from the ground station to the remotely sensed measurements.
+# We are using Deep Learning Neural Netwwork from Keras to predict temperature.
 #
 #AUTHORS: Benoit Parmentier
 #DATE CREATED: 04/18/2018
-#DATE MODIFIED: 04/18/2019
+#DATE MODIFIED: 05/01/2019
 #Version: 1
 #PROJECT: SESYNC Geospatial Course and AAG 2019 Python Geospatial Course
 #TO DO:
@@ -155,9 +156,9 @@ else:
 
 data_gpd = gpd.read_file(os.path.join(in_dir,ghcn_filename))
 
-data_gpd.head()  
+data_gpd.head() 
 
-         ##### Combine raster layer and geogpanda layer
+##### Combine raster layer and geogpanda layer
 
 data_gpd.plot(marker="*",color="green",markersize=5)
 station_or = data_gpd.to_crs({'init': 'epsg:2991'}) #reproject to  match the  raster image
@@ -168,12 +169,6 @@ station_or.plot(ax=ax,marker="*",
               color="red",
                markersize=10)
                
-#### Extract information from raster using coordinates
-x_coord = station_or.geometry.x # pands.core.series.Series
-y_coord = station_or.geometry.y
-# Find value at point (x,y) or at vectors (X,Y)
-station_or['LST1'] = lst1_gr.map_pixel(x_coord,y_coord)
-station_or['LST7'] = lst7_gr.map_pixel(x_coord,y_coord)
 
 station_or.columns #get names of col
 
@@ -181,8 +176,6 @@ station_or['year'].value_counts()
 station_or.groupby(['month'])['value'].mean() # average by stations per month
      
 print("number of rows:",station_or.station.count(),", number of stations:",len(station_or.station.unique()))
-station_or['LST1'] = station_or['LST1'] - 273.15 #create new column
-station_or['LST7'] = station_or['LST7'] - 273.15 #create new column
 
 station_or_jan = station_or.loc[(station_or['month']==1) & (station_or['value']!=-9999)]
 station_or_jul = station_or.loc[(station_or['month']==7) & (station_or['value']!=-9999)]
@@ -192,8 +185,8 @@ station_or_jan.columns
 station_or_jan.shape
 
 #avg_df = station_or.groupby(['station'])['value'].mean())
-avg_jan_df = station_or_jan.groupby(['station'])['value','LST1','LST7'].mean()
-avg_jul_df = station_or_jul.groupby(['station'])['value','LST1','LST7'].mean()
+avg_jan_df = station_or_jan.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
+avg_jul_df = station_or_jul.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
 
 avg_jan_df.head()
 avg_jan_df.shape
@@ -203,7 +196,10 @@ avg_jul_df.head()
 
 avg_jan_df['T1'] = avg_jan_df['value']/10
 avg_jul_df['T7'] = avg_jul_df['value']/10
-         
+
+avg_jan_df = avg_jan_df.rename(columns={"mm_01": "LST1", "mm_07": "LST7"})
+avg_jul_df = avg_jul_df.rename(columns={"mm_01": "LST1", "mm_07": "LST7"})
+
 ################################################
 ###  PART III : Fit model and generate prediction
 
@@ -211,7 +207,7 @@ avg_jul_df['T7'] = avg_jul_df['value']/10
 ### Add additionl covariates!!
 
 #selected_covariates_names_updated = selected_continuous_var_names + names_cat 
-selected_features = ['LST1'] #selected features
+selected_features = ['LST1','ELEV_SRTM','CANHEIGHT','DISTOC'] #selected features
 selected_target = ['T1'] #selected dependent variables
 ## Split training and testing
 
