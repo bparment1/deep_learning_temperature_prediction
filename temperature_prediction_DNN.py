@@ -244,8 +244,7 @@ scaled_training.shape
 ## Concatenate column-wise
 X_testing_df = pd.DataFrame(scaled_testing,columns=selected_continuous_var_names)
 
-X_training_df = pd.DataFrame(np.concatenate((X_train[names_cat].values,scaled_training),axis=1),
-                                            columns=names_cat+selected_continuous_var_names)
+X_training_df = pd.DataFrame(scaled_training, columns=selected_continuous_var_names)
 
 X_testing_df.to_csv(os.path.join(out_dir,
                     "X_testing_df_"+out_suffix+".csv"))
@@ -253,6 +252,18 @@ X_testing_df.to_csv(os.path.join(out_dir,
 X_training_df.to_csv(os.path.join(out_dir,
                     "X_training_df_"+out_suffix+".csv"))
 
+X_training_df.columns
+
+
+#NOTE INPUT SHOULD BE THE NUMBER OF VAR
+#### Test with less number of input nodes: pruning
+model1 = Sequential()
+model1.add(Dense(4, input_dim=9, activation='relu'))
+model1.add(Dense(10, activation='relu'))
+model1.add(Dense(10, activation='relu'))
+model1.add(Dense(1)) #scalar regression, end DNN without activation function as we are predicting continuous values
+
+model1.compitle
 
 
 
