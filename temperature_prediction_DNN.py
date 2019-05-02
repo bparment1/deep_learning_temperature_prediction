@@ -286,10 +286,12 @@ x_partial_train = X[25:]
 y_partial_train = Y[25:]
 
 x_validation
+n_epoch = 200
+
 history1_validation = model1.fit(
     x_partial_train,
     y_partial_train,
-    epochs=50,
+    epochs=n_epoch,
     #batch=1000,
     validation_data=(x_validation,y_validation),
     verbose=2
@@ -303,7 +305,41 @@ loss_acc_fit_model1_df.to_csv("loss_acc_fit_model1b_validation_df.csv")
 
 loss_acc_fit_model1_df.columns
 
-plt.plot(range(1,51),loss_acc_fit_model1_df['mean_absolute_error'])
+fig, ax = plt.subplots()
+ax.plot(range(1,n_epoch+1),loss_acc_fit_model1_df['mean_absolute_error'],
+        color="red",label="training")
+ax.plot(range(1,n_epoch+1),loss_acc_fit_model1_df['val_mean_absolute_error'],
+        color="green",label="validation")
+ax.legend()
+
+plt.plot(test['epoch'],test['acc'])
+
+history1_validation.
+
+#plt.plot(test['acc'])
+ 
+# multiple line plot
+#plt.plot( 'epoch', 'acc', 
+#         data=test, 
+#         marker='o', markerfacecolor='blue'
+#         color='skyblue', linewidth=4)
+
+#plt.plot( 'epoch', 'loss', 
+#         data=test, 
+#         marker='', 
+#         color='olive', linewidth=2)
+
+#plt.plot(hist.history['loss'])
+#plt.plot(hist.history['val_loss'])
+#plt.title('Model loss')
+#plt.ylabel('Loss')
+#plt.xlabel('Epoch')
+#plt.legend(['Train', 'Val'], loc='upper right')
+#plt.show()
+
+y_pred_test_dnn = model1.predict(X_testing_df) #predicted values!!!, need to compute the residuals
+
+mae_val_test_dnn = metrics.mean_absolute_error(y_test, y_pred_test_dnn) #MAE
 
 from sklearn.linear_model import LinearRegression
 regr = LinearRegression() #create/instantiate object used for linear regresssion
