@@ -193,8 +193,12 @@ station_or_jan.columns
 station_or_jan.shape
 
 #avg_df = station_or.groupby(['station'])['value'].mean())
-avg_jan_df = station_or_jan.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
-avg_jul_df = station_or_jul.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
+#avg_jan_df = station_or_jan.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
+#avg_jul_df = station_or_jul.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','CANHEIGHT','DISTOC'].mean()
+
+avg_jan_df = station_or_jan.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','DISTOC'].mean()
+avg_jul_df = station_or_jul.groupby(['station'])['value','mm_01','mm_07','ELEV_SRTM','DISTOC'].mean()
+
 
 avg_jan_df.head()
 avg_jan_df.shape
@@ -216,6 +220,8 @@ avg_jul_df = avg_jul_df.rename(columns={"mm_01": "LST1", "mm_07": "LST7"})
 
 #selected_covariates_names_updated = selected_continuous_var_names + names_cat 
 selected_features = ['LST1','ELEV_SRTM','CANHEIGHT','DISTOC'] #selected features
+selected_features = ['LST1','ELEV_SRTM','DISTOC'] #selected features
+
 selected_target = ['T1'] #selected dependent variables
 ## Split training and testing
 
@@ -258,7 +264,7 @@ X_training_df.columns
 #NOTE INPUT SHOULD BE THE NUMBER OF VAR
 #### Test with less number of input nodes: pruning
 model1 = Sequential()
-model1.add(Dense(4, input_dim=4, activation='relu'))
+model1.add(Dense(4, input_dim=3, activation='relu'))
 model1.add(Dense(10, activation='relu'))
 model1.add(Dense(10, activation='relu'))
 model1.add(Dense(1)) #scalar regression, end DNN without activation function as we are predicting continuous values
@@ -289,12 +295,15 @@ history1_validation = model1.fit(
     verbose=2
 )
 
-loss_acc_fit_model1b_df = pd.DataFrame(history1b_validation.history)
+loss_acc_fit_model1_df = pd.DataFrame(history1_validation.history)
 
-loss_acc_fit_model1b_df.to_csv("loss_acc_fit_model1b_validation_df.csv")
+loss_acc_fit_model1_df.to_csv("loss_acc_fit_model1b_validation_df.csv")
 
 #https://github.com/keras-team/keras/issues/2134
 
+loss_acc_fit_model1_df.columns
+
+plt.plot(range(1,51),loss_acc_fit_model1_df['mean_absolute_error'])
 
 from sklearn.linear_model import LinearRegression
 regr = LinearRegression() #create/instantiate object used for linear regresssion
