@@ -258,13 +258,42 @@ X_training_df.columns
 #NOTE INPUT SHOULD BE THE NUMBER OF VAR
 #### Test with less number of input nodes: pruning
 model1 = Sequential()
-model1.add(Dense(4, input_dim=9, activation='relu'))
+model1.add(Dense(4, input_dim=4, activation='relu'))
 model1.add(Dense(10, activation='relu'))
 model1.add(Dense(10, activation='relu'))
 model1.add(Dense(1)) #scalar regression, end DNN without activation function as we are predicting continuous values
 
-model1.compitle
+model1.compile(optimizer="rmsprop",loss="mse",metrics=["mae"])
 
+#### Need validation dataset!!
+###### Use validation
+X = X_training_df.values
+Y = y_train #.values
+
+X.shape
+
+#keep for validation:              
+x_validation = X[:25] #for validation
+y_validation = Y[:25]
+
+x_partial_train = X[25:]
+y_partial_train = Y[25:]
+
+x_validation
+history1_validation = model1.fit(
+    x_partial_train,
+    y_partial_train,
+    epochs=50,
+    #batch=1000,
+    validation_data=(x_validation,y_validation),
+    verbose=2
+)
+
+loss_acc_fit_model1b_df = pd.DataFrame(history1b_validation.history)
+
+loss_acc_fit_model1b_df.to_csv("loss_acc_fit_model1b_validation_df.csv")
+
+#https://github.com/keras-team/keras/issues/2134
 
 
 from sklearn.linear_model import LinearRegression
