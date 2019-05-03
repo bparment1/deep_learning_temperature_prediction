@@ -286,7 +286,7 @@ x_partial_train = X[25:]
 y_partial_train = Y[25:]
 
 x_validation
-n_epoch = 200
+n_epoch = 600
 
 history1_validation = model1.fit(
     x_partial_train,
@@ -314,7 +314,7 @@ ax.legend()
 
 plt.plot(test['epoch'],test['acc'])
 
-history1_validation.
+#history1_validation.
 
 #plt.plot(test['acc'])
  
@@ -337,6 +337,8 @@ history1_validation.
 #plt.legend(['Train', 'Val'], loc='upper right')
 #plt.show()
 
+from sklearn import metrics
+
 y_pred_test_dnn = model1.predict(X_testing_df) #predicted values!!!, need to compute the residuals
 
 mae_val_test_dnn = metrics.mean_absolute_error(y_test, y_pred_test_dnn) #MAE
@@ -346,7 +348,12 @@ regr = LinearRegression() #create/instantiate object used for linear regresssion
 regr.fit(X_train,y_train) #fit model
 
 y_pred_train = regr.predict(X_train) # Note this is a fit!
-y_pred_test = regr.predict(X_test) # Note this is a fit!
+y_pred_test_lr = regr.predict(X_test) # Note this is a fit!
+
+mae_val_test_lr = metrics.mean_absolute_error(y_test, y_pred_test_lr) #MAE
+
+mae_val_test_lr
+mae_val_test_dnn
 
 #### Model evaluation
 
